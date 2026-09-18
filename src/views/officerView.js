@@ -1,7 +1,7 @@
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../firebase.js";
 import { el, showToast, formatClock, tsToDate } from "../ui.js";
-import { TEAM_IDS, subscribeGameStatus, subscribeOfficers, updateOfficerLocation, setOfficerPhoto, reportFound } from "../gameData.js";
+import { TEAM_IDS, OFFICER_NAMES, TEAM_NAMES, subscribeGameStatus, subscribeOfficers, updateOfficerLocation, setOfficerPhoto, reportFound } from "../gameData.js";
 
 const AUTO_UPDATE_MS = 5 * 60 * 1000;
 
@@ -16,7 +16,7 @@ export function renderOfficerView(container, { officerId, onExit }) {
 
   const screen = el("div", { class: "screen" });
   const topbar = el("div", { class: "topbar" }, [
-    el("h1", {}, [el("span", { class: "dot" }), `임원단 ${officerId}번`]),
+    el("h1", {}, [el("span", { class: "dot" }), `임원단 ${officerId}번 · ${OFFICER_NAMES[officerId]}`]),
     el("button", { class: "btn-ghost", text: "나가기", onclick: handleExit }),
   ]);
   const content = el("div", { class: "content" });
@@ -173,7 +173,7 @@ export function renderOfficerView(container, { officerId, onExit }) {
       foundPanel.appendChild(
         el("div", { class: "status-row" }, [
           el("span", { text: "상태" }),
-          el("span", { class: "badge caught", text: `${officerData.foundByTeam}팀에게 발견됨` }),
+          el("span", { class: "badge caught", text: `${TEAM_NAMES[officerData.foundByTeam]}(${officerData.foundByTeam}팀)에게 발견됨` }),
         ])
       );
       foundPanel.appendChild(
@@ -187,13 +187,15 @@ export function renderOfficerView(container, { officerId, onExit }) {
     for (const id of TEAM_IDS) {
       grid.appendChild(
         el("button", {
-          class: `num-btn ${selectedFoundTeam === id ? "selected" : ""}`,
-          text: String(id),
+          class: `num-btn with-name ${selectedFoundTeam === id ? "selected" : ""}`,
           onclick: () => {
             selectedFoundTeam = id;
             renderFoundPanel();
           },
-        })
+        }, [
+          el("span", { class: "num-btn-num", text: String(id) }),
+          el("span", { class: "num-btn-name", text: TEAM_NAMES[id] }),
+        ])
       );
     }
     foundPanel.appendChild(grid);
@@ -207,7 +209,7 @@ export function renderOfficerView(container, { officerId, onExit }) {
           if (!selectedFoundTeam) return;
           try {
             await reportFound(officerId, selectedFoundTeam);
-            showToast(`${selectedFoundTeam}팀에게 발견된 것으로 기록했습니다.`);
+            showToast(`${TEAM_NAMES[selectedFoundTeam]}(${selectedFoundTeam}팀)에게 발견된 것으로 기록했습니다.`);
           } catch (err) {
             showToast(`처리 실패: ${err.message}`, "error");
           }

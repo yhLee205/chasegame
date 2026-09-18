@@ -3,6 +3,7 @@ import { loadNaverMaps, BORAMAE_PARK_CENTER } from "../naverMap.js";
 import {
   OFFICER_IDS,
   TEAM_IDS,
+  TEAM_NAMES,
   subscribeGameStatus,
   subscribeOfficers,
   subscribeTeams,
@@ -30,7 +31,7 @@ export function renderTeamView(container, { teamId, onExit }) {
 
   const screen = el("div", { class: "screen" });
   const topbar = el("div", { class: "topbar" }, [
-    el("h1", {}, [el("span", { class: "dot" }), `팀 ${teamId}`]),
+    el("h1", {}, [el("span", { class: "dot" }), `${TEAM_NAMES[teamId]} (${teamId}팀)`]),
     el("button", { class: "btn-ghost", text: "나가기", onclick: handleExit }),
   ]);
   const content = el("div", { class: "content" });
@@ -232,7 +233,7 @@ export function renderTeamView(container, { teamId, onExit }) {
       boardList.appendChild(
         el("div", { class: `leaderboard-row ${rank === 1 && row.count > 0 ? "top1" : ""}` }, [
           el("div", { class: "rank", text: String(rank) }),
-          el("div", { class: `team-name ${row.id === Number(teamId) ? "" : ""}`, text: `${row.id}팀${row.id === Number(teamId) ? " (나)" : ""}` }),
+          el("div", { class: "team-name", text: `${TEAM_NAMES[row.id]}${row.id === Number(teamId) ? " (나)" : ""}` }),
           el("div", { class: "count", text: `${row.count}/4` }),
           el("div", { class: "time", text: timeText }),
         ])

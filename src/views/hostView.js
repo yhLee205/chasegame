@@ -3,6 +3,8 @@ import { loadNaverMaps, BORAMAE_PARK_CENTER } from "../naverMap.js";
 import {
   OFFICER_IDS,
   TEAM_IDS,
+  OFFICER_NAMES,
+  TEAM_NAMES,
   subscribeGameStatus,
   subscribeOfficers,
   subscribeTeams,
@@ -205,12 +207,12 @@ export function renderHostView(container, { onExit }) {
     for (const id of OFFICER_IDS) {
       const o = officers[id] || {};
       const row = el("div", { class: "status-row" });
-      row.appendChild(el("span", { text: `임원 ${id}` }));
+      row.appendChild(el("span", { text: `임원 ${id}번 · ${OFFICER_NAMES[id]}` }));
       const right = el("div", { style: "display:flex; align-items:center; gap:8px;" });
       right.appendChild(
         el("span", {
           class: `badge ${o.found ? "caught" : "waiting"}`,
-          text: o.found ? `${o.foundByTeam}팀에게 발견 (${formatClock(tsToDate(o.foundAt))})` : "미발견",
+          text: o.found ? `${TEAM_NAMES[o.foundByTeam]}(${o.foundByTeam}팀)에게 발견 (${formatClock(tsToDate(o.foundAt))})` : "미발견",
         })
       );
       if (o.found) {
@@ -219,7 +221,7 @@ export function renderHostView(container, { onExit }) {
             class: "btn-ghost",
             text: "취소",
             onclick: async () => {
-              if (!confirm(`임원 ${id}의 발견 기록을 취소할까요?`)) return;
+              if (!confirm(`임원 ${id}번 ${OFFICER_NAMES[id]}의 발견 기록을 취소할까요?`)) return;
               try {
                 await undoFound(id);
                 showToast("발견 기록을 취소했습니다.");
@@ -243,7 +245,7 @@ export function renderHostView(container, { onExit }) {
       const updated = tsToDate(t.updatedAt);
       teamPanel.appendChild(
         el("div", { class: "status-row" }, [
-          el("span", { text: `${id}팀` }),
+          el("span", { text: `${TEAM_NAMES[id]} (${id}팀)` }),
           el("span", { class: "hint", text: updated ? `${formatClock(updated)} 갱신` : "위치 없음" }),
         ])
       );
@@ -260,7 +262,7 @@ export function renderHostView(container, { onExit }) {
     [...catches].reverse().forEach((c) => {
       logPanel.appendChild(
         el("div", { class: "status-row" }, [
-          el("span", { text: `${c.teamId}팀 → 임원 ${c.officerId}` }),
+          el("span", { text: `${TEAM_NAMES[c.teamId]}(${c.teamId}팀) → 임원 ${c.officerId}번 ${OFFICER_NAMES[c.officerId]}` }),
           el("span", { class: "hint", text: formatClock(tsToDate(c.foundAt)) }),
         ])
       );

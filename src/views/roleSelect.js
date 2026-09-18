@@ -1,5 +1,5 @@
 import { el, showToast } from "../ui.js";
-import { verifyOfficerPassword } from "../gameData.js";
+import { verifyOfficerPassword, TEAM_NAMES } from "../gameData.js";
 import { selectRole } from "../main.js";
 
 const HOST_PASSWORD = import.meta.env.VITE_HOST_PASSWORD || "changeme";
@@ -26,7 +26,7 @@ export function renderRoleSelect(container) {
 
   function renderStep() {
     if (step === "role") return roleCards();
-    if (step === "team-number") return numberPicker(9, "team");
+    if (step === "team-number") return numberPicker(9, "team", TEAM_NAMES);
     if (step === "officer-number") return numberPicker(4, "officer-password");
     if (step === "officer-password") return passwordForm("officer");
     if (step === "host-password") return passwordForm("host");
@@ -65,21 +65,32 @@ export function renderRoleSelect(container) {
     ]);
   }
 
-  function numberPicker(count, nextStep) {
+  function numberPicker(count, nextStep, names) {
     const wrap = el("div", { class: "panel" });
     wrap.appendChild(el("h2", { text: "번호 선택" }));
     const grid = el("div", { class: `number-grid ${count === 4 ? "of4" : ""}` });
     for (let i = 1; i <= count; i++) {
-      grid.appendChild(
-        el("button", {
-          class: `num-btn ${selectedNumber === i ? "selected" : ""}`,
-          text: String(i),
-          onclick: () => {
-            selectedNumber = i;
-            paint();
-          },
-        })
-      );
+      const isSelected = selectedNumber === i;
+      const btn = names
+        ? el("button", {
+            class: `num-btn with-name ${isSelected ? "selected" : ""}`,
+            onclick: () => {
+              selectedNumber = i;
+              paint();
+            },
+          }, [
+            el("span", { class: "num-btn-num", text: String(i) }),
+            el("span", { class: "num-btn-name", text: names[i] }),
+          ])
+        : el("button", {
+            class: `num-btn ${isSelected ? "selected" : ""}`,
+            text: String(i),
+            onclick: () => {
+              selectedNumber = i;
+              paint();
+            },
+          });
+      grid.appendChild(btn);
     }
     wrap.appendChild(grid);
 
