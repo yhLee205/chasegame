@@ -1,0 +1,39 @@
+rules_version = '2';
+
+// 보라매 추격 미션: 하루짜리 청년부 행사용 규칙입니다.
+// 로그인(Firebase Auth) 없이 팀/임원단/진행자가 모두 같은 익명 클라이언트로 접속하므로,
+// "누가 어떤 문서를 썼는지"까지는 서버 단에서 완전히 검증하지 못합니다.
+// (임원단 입장 비밀번호, 진행자 비밀번호는 앱 UI 단에서만 확인합니다.)
+// 대신 문서 구조/ID 범위를 제한해서 최소한의 오남용을 막습니다.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /game/status {
+      allow read: if true;
+      allow write: if request.resource.data.keys().hasOnly(
+        ['started', 'startTime', 'officerPassword', 'resetCount']
+      );
+    }
+
+    match /officers/{officerId} {
+      allow read: if true;
+      allow write: if officerId in ['1', '2', '3', '4'] &&
+        request.resource.data.keys().hasOnly(
+          ['location', 'updatedAt', 'photoUrl', 'photoUpdatedAt', 'found', 'foundByTeam', 'foundAt']
+        );
+    }
+
+    match /teams/{teamId} {
+      allow read: if true;
+      allow write: if teamId in ['1','2','3','4','5','6','7','8','9'] &&
+        request.resource.data.keys().hasOnly(['location', 'updatedAt']);
+    }
+
+    match /catches/{catchId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['officerId', 'teamId', 'foundAt']);
+      allow delete: if true;
+      allow update: if false;
+    }
+  }
+}

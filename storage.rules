@@ -1,0 +1,14 @@
+rules_version = '2';
+
+// 임원단 힌트 사진 업로드용 규칙. 인증 없이 사용하는 1일 행사 앱이므로
+// 파일 크기/형식만 제한합니다.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /officers/{officerId}/{fileName} {
+      allow read: if true;
+      allow write: if officerId in ['1', '2', '3', '4'] &&
+        request.resource.size < 8 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+    }
+  }
+}
