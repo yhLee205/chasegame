@@ -20,6 +20,25 @@ import { db } from "./firebase.js";
 export const OFFICER_IDS = [1, 2, 3, 4];
 export const TEAM_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
+export const OFFICER_NAMES = {
+  1: "이영호",
+  2: "김동민",
+  3: "남규빈",
+  4: "최가은",
+};
+
+export const TEAM_NAMES = {
+  1: "민수순",
+  2: "샤론순",
+  3: "호현순",
+  4: "미연순",
+  5: "승희순",
+  6: "은혜순",
+  7: "재혁순",
+  8: "성재순",
+  9: "은민순",
+};
+
 const gameDocRef = doc(db, "game", "status");
 const officerDocRef = (id) => doc(db, "officers", String(id));
 const teamDocRef = (id) => doc(db, "teams", String(id));
