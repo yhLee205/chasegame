@@ -1,10 +1,10 @@
-import { el, showToast, formatClock, tsToDate } from "../ui.js";
+import { el, showToast, showModal, formatClock, tsToDate } from "../ui.js";
 import { loadNaverMaps, BORAMAE_PARK_CENTER } from "../naverMap.js";
 import {
   OFFICER_IDS,
   TEAM_IDS,
-  OFFICER_NAMES,
   TEAM_NAMES,
+  officerName,
   subscribeGameStatus,
   subscribeOfficers,
   subscribeTeams,
@@ -13,6 +13,7 @@ import {
   endGame,
   undoFound,
   changeOfficerPassword,
+  updateOfficerName,
 } from "../gameData.js";
 
 export function renderHostView(container, { onExit }) {
@@ -206,17 +207,25 @@ export function renderHostView(container, { onExit }) {
     officerPanel.innerHTML = "";
     officerPanel.appendChild(el("h2", { text: "임원단 현황" }));
     for (const id of OFFICER_IDS) {
+      const name = officerName(officers, id);
       const foundTeamIds = new Set(
         catches.filter((c) => Number(c.officerId) === id).map((c) => Number(c.teamId))
       );
       const count = foundTeamIds.size;
       const row = el("div", { class: "status-row" });
-      row.appendChild(el("span", { text: `임원 ${id}번 · ${OFFICER_NAMES[id]}` }));
+      row.appendChild(el("span", { text: `임원 ${id}번 · ${name}` }));
       const right = el("div", { style: "display:flex; align-items:center; gap:8px;" });
       right.appendChild(
         el("span", {
           class: `badge ${count > 0 ? "caught" : "waiting"}`,
           text: count > 0 ? `${count}팀에게 발견됨` : "미발견",
+        })
+      );
+      right.appendChild(
+        el("button", {
+          class: "btn-ghost",
+          text: "이름 변경",
+          onclick: () => openRenameModal(id, name),
         })
       );
       if (count > 0) {
@@ -225,7 +234,7 @@ export function renderHostView(container, { onExit }) {
             class: "btn-ghost",
             text: "취소",
             onclick: async () => {
-              if (!confirm(`임원 ${id}번 ${OFFICER_NAMES[id]}의 가장 최근 발견 기록을 취소할까요?`)) return;
+              if (!confirm(`임원 ${id}번 ${name}의 가장 최근 발견 기록을 취소할까요?`)) return;
               try {
                 await undoFound(id);
                 showToast("발견 기록을 취소했습니다.");
@@ -239,6 +248,40 @@ export function renderHostView(container, { onExit }) {
       row.appendChild(right);
       officerPanel.appendChild(row);
     }
+  }
+
+  function openRenameModal(id, currentName) {
+    const input = el("input", { type: "text", value: currentName, placeholder: "임원 이름" });
+    const body = el("div", { class: "field" }, [
+      el("label", { text: `임원 ${id}번 이름` }),
+      input,
+    ]);
+    const close = showModal({
+      title: "이름 변경",
+      body,
+      actions: [
+        {
+          label: "저장",
+          class: "btn-primary",
+          onClick: async () => {
+            const newName = input.value.trim();
+            if (!newName) return;
+            try {
+              await updateOfficerName(id, newName);
+              showToast(`임원 ${id}번 이름을 ${newName}(으)로 변경했습니다.`);
+              close();
+            } catch (err) {
+              showToast(`이름 변경 실패: ${err.message}`, "error");
+            }
+          },
+        },
+        {
+          label: "취소",
+          class: "btn-ghost",
+          onClick: () => close(),
+        },
+      ],
+    });
   }
 
   function renderTeamPanel() {
@@ -266,7 +309,7 @@ export function renderHostView(container, { onExit }) {
     [...catches].reverse().forEach((c) => {
       logPanel.appendChild(
         el("div", { class: "status-row" }, [
-          el("span", { text: `${TEAM_NAMES[c.teamId]}(${c.teamId}팀) → 임원 ${c.officerId}번 ${OFFICER_NAMES[c.officerId]}` }),
+          el("span", { text: `${TEAM_NAMES[c.teamId]}(${c.teamId}팀) → 임원 ${c.officerId}번 ${officerName(officers, c.officerId)}` }),
           el("span", { class: "hint", text: formatClock(tsToDate(c.foundAt)) }),
         ])
       );
