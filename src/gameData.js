@@ -63,7 +63,7 @@ export async function ensureGameDocuments() {
     const ref = officerDocRef(id);
     const s = await getDoc(ref);
     if (!s.exists()) {
-      await setDoc(ref, emptyOfficerState());
+      await setDoc(ref, { ...emptyOfficerState(), name: OFFICER_NAMES[id] });
     }
   }
   for (const id of TEAM_IDS) {
@@ -141,6 +141,16 @@ export async function setOfficerPhoto(officerId, photoUrl) {
   });
 }
 
+/** Host-only: renames an officer mid-game (e.g. a substitution). Persists across new games. */
+export async function updateOfficerName(officerId, newName) {
+  await updateDoc(officerDocRef(officerId), { name: newName });
+}
+
+/** Current display name for an officer: the live Firestore override if the host has set one, else the default. */
+export function officerName(officers, id) {
+  return (officers && officers[id] && officers[id].name) || OFFICER_NAMES[id];
+}
+
 /** Finds the catch doc with the latest foundAt among a snapshot's docs (client-side, avoids needing a composite index). */
 function latestCatchDoc(snap) {
   let latest = null;
@@ -212,7 +222,8 @@ export async function startNewGame() {
   const batch = writeBatch(db);
   catchesSnap.forEach((d) => batch.delete(d.ref));
   for (const id of OFFICER_IDS) {
-    batch.set(officerDocRef(id), emptyOfficerState());
+    // merge:true so a name the host set earlier survives a new-game reset.
+    batch.set(officerDocRef(id), emptyOfficerState(), { merge: true });
   }
   for (const id of TEAM_IDS) {
     batch.set(teamDocRef(id), emptyTeamState());
