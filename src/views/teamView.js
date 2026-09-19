@@ -4,6 +4,7 @@ import {
   OFFICER_IDS,
   TEAM_IDS,
   TEAM_NAMES,
+  officerName,
   subscribeGameStatus,
   subscribeOfficers,
   subscribeTeams,
@@ -185,7 +186,7 @@ export function renderTeamView(container, { teamId, onExit }) {
         item.appendChild(el("div", { class: "thumb" }));
       }
       const info = el("div", { class: "info" });
-      info.appendChild(el("div", { class: "name", text: `대상 ${id}` }));
+      info.appendChild(el("div", { class: "name", text: officerName(officers, id) }));
 
       let metaText = "위치 정보 없음";
       if (o.location) {
