@@ -43,7 +43,7 @@ export function renderRoleSelect(container) {
         },
       }, [
         el("div", { class: "icon", text: "🎯" }),
-        el("div", { class: "title", text: "팀 (1~9)" }),
+        el("div", { class: "title", text: "팀" }),
         el("div", { class: "desc", text: "대상 위치를 추적하고 먼저 찾아내세요" }),
       ]),
       el("button", {
@@ -54,7 +54,7 @@ export function renderRoleSelect(container) {
         },
       }, [
         el("div", { class: "icon", text: "🕶️" }),
-        el("div", { class: "title", text: "임원단 (1~4)" }),
+        el("div", { class: "title", text: "임원단" }),
         el("div", { class: "desc", text: "숨어서 위치를 공유하고, 발견되면 체크하세요" }),
       ]),
       el("button", { class: "role-card", onclick: () => go("host-password") }, [
@@ -118,7 +118,7 @@ export function renderRoleSelect(container) {
   function passwordForm(kind) {
     const wrap = el("div", { class: "panel" });
     wrap.appendChild(
-      el("h2", { text: kind === "officer" ? `임원단 ${selectedNumber}번 · ${OFFICER_NAMES[selectedNumber]} 입장` : "진행자 입장" })
+      el("h2", { text: kind === "officer" ? `${OFFICER_NAMES[selectedNumber]} 입장` : "진행자 입장" })
     );
     const errorBox = el("div", { class: "error-msg" });
     const input = el("input", { type: "password", placeholder: "비밀번호", inputmode: "numeric" });
