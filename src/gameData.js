@@ -5,7 +5,6 @@ import {
   updateDoc,
   onSnapshot,
   collection,
-  addDoc,
   getDocs,
   query,
   where,
@@ -43,6 +42,8 @@ const gameDocRef = doc(db, "game", "status");
 const officerDocRef = (id) => doc(db, "officers", String(id));
 const teamDocRef = (id) => doc(db, "teams", String(id));
 const catchesCol = collection(db, "catches");
+/** One doc per (officer, team) pair, so a team's catch on an officer is a simple on/off toggle. */
+const catchDocRef = (officerId, teamId) => doc(catchesCol, `${officerId}_${teamId}`);
 
 const DEFAULT_OFFICER_PASSWORD =
   import.meta.env.VITE_DEFAULT_OFFICER_PASSWORD || "0000";
@@ -141,21 +142,44 @@ export async function setOfficerPhoto(officerId, photoUrl) {
   });
 }
 
-export async function reportFound(officerId, teamId) {
-  const foundAt = serverTimestamp();
-  await updateDoc(officerDocRef(officerId), {
-    found: true,
-    foundByTeam: teamId,
-    foundAt,
-  });
-  await addDoc(catchesCol, {
-    officerId: Number(officerId),
-    teamId: Number(teamId),
-    foundAt,
-  });
+/** Recomputes an officer's summary fields from the most recent remaining catch (or clears them if none). */
+async function refreshOfficerSummary(officerId) {
+  const q = query(
+    catchesCol,
+    where("officerId", "==", Number(officerId)),
+    orderBy("foundAt", "desc"),
+    limit(1)
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) {
+    await updateDoc(officerDocRef(officerId), { found: false, foundByTeam: null, foundAt: null });
+  } else {
+    const data = snap.docs[0].data();
+    await updateDoc(officerDocRef(officerId), {
+      found: true,
+      foundByTeam: data.teamId,
+      foundAt: data.foundAt,
+    });
+  }
 }
 
-/** Host-only: undo the most recent catch for an officer (mistake correction). */
+/** Toggles whether a specific team has found a specific officer on/off, independently of other teams. */
+export async function toggleFound(officerId, teamId) {
+  const ref = catchDocRef(officerId, teamId);
+  const snap = await getDoc(ref);
+  if (snap.exists()) {
+    await deleteDoc(ref);
+  } else {
+    await setDoc(ref, {
+      officerId: Number(officerId),
+      teamId: Number(teamId),
+      foundAt: serverTimestamp(),
+    });
+  }
+  await refreshOfficerSummary(officerId);
+}
+
+/** Host-only: undo the most recently recorded catch for an officer (mistake correction). */
 export async function undoFound(officerId) {
   const q = query(
     catchesCol,
@@ -164,14 +188,9 @@ export async function undoFound(officerId) {
     limit(1)
   );
   const snap = await getDocs(q);
-  const batch = writeBatch(db);
-  snap.forEach((d) => batch.delete(d.ref));
-  batch.update(officerDocRef(officerId), {
-    found: false,
-    foundByTeam: null,
-    foundAt: null,
-  });
-  await batch.commit();
+  if (snap.empty) return;
+  await deleteDoc(snap.docs[0].ref);
+  await refreshOfficerSummary(officerId);
 }
 
 export async function verifyOfficerPassword(password) {

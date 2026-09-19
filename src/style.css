@@ -260,10 +260,16 @@ button {
   box-shadow: none;
 }
 
-.num-btn.selected {
+.num-btn.selected,
+.num-btn.on {
   background: var(--signal);
   color: #fff;
   box-shadow: var(--shadow-sm), 0 0 0 3px var(--yellow) inset;
+}
+
+.num-btn.pending {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .num-btn.with-name {
