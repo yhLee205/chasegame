@@ -182,7 +182,7 @@ export function renderOfficerView(container, { officerId, onExit }) {
 
     if (foundSet.size > 0) {
       const names = TEAM_IDS.filter((id) => foundSet.has(id))
-        .map((id) => `${TEAM_NAMES[id]}(${id}팀)`)
+        .map((id) => TEAM_NAMES[id])
         .join(", ");
       foundPanel.appendChild(
         el("div", { class: "status-row" }, [
@@ -220,8 +220,8 @@ export function renderOfficerView(container, { officerId, onExit }) {
       await toggleFound(officerId, teamId);
       showToast(
         wasOn
-          ? `${TEAM_NAMES[teamId]}(${teamId}팀) 발견 표시를 껐습니다.`
-          : `${TEAM_NAMES[teamId]}(${teamId}팀)에게 발견된 것으로 표시했습니다.`
+          ? `${TEAM_NAMES[teamId]} 발견 표시를 껐습니다.`
+          : `${TEAM_NAMES[teamId]}에게 발견된 것으로 표시했습니다.`
       );
     } catch (err) {
       showToast(`처리 실패: ${err.message}`, "error");
