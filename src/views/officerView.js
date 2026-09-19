@@ -1,7 +1,7 @@
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../firebase.js";
 import { el, showToast, formatClock, tsToDate } from "../ui.js";
-import { TEAM_IDS, OFFICER_NAMES, TEAM_NAMES, subscribeGameStatus, subscribeOfficers, updateOfficerLocation, setOfficerPhoto, reportFound } from "../gameData.js";
+import { TEAM_IDS, OFFICER_NAMES, TEAM_NAMES, subscribeGameStatus, subscribeOfficers, subscribeCatches, updateOfficerLocation, setOfficerPhoto, toggleFound } from "../gameData.js";
 
 const AUTO_UPDATE_MS = 5 * 60 * 1000;
 
@@ -12,7 +12,8 @@ export function renderOfficerView(container, { officerId, onExit }) {
   let currentLocation = null;
   let officerData = null;
   let gameStatus = null;
-  let selectedFoundTeam = null;
+  let catches = [];
+  const pendingTeams = new Set();
 
   const screen = el("div", { class: "screen" });
   const topbar = el("div", { class: "topbar" }, [
@@ -51,6 +52,10 @@ export function renderOfficerView(container, { officerId, onExit }) {
     officerData = data[officerId];
     renderLocationPanel();
     renderPhotoPanel();
+    renderFoundPanel();
+  }));
+  unsubs.push(subscribeCatches((data) => {
+    catches = data;
     renderFoundPanel();
   }));
 
@@ -169,29 +174,36 @@ export function renderOfficerView(container, { officerId, onExit }) {
     foundPanel.innerHTML = "";
     foundPanel.appendChild(el("h2", { text: "발견 여부 체크" }));
 
-    if (officerData && officerData.found) {
+    const foundSet = new Set(
+      catches
+        .filter((c) => Number(c.officerId) === Number(officerId))
+        .map((c) => Number(c.teamId))
+    );
+
+    if (foundSet.size > 0) {
+      const names = TEAM_IDS.filter((id) => foundSet.has(id))
+        .map((id) => `${TEAM_NAMES[id]}(${id}팀)`)
+        .join(", ");
       foundPanel.appendChild(
         el("div", { class: "status-row" }, [
-          el("span", { text: "상태" }),
-          el("span", { class: "badge caught", text: `${TEAM_NAMES[officerData.foundByTeam]}(${officerData.foundByTeam}팀)에게 발견됨` }),
+          el("span", { text: "나를 발견한 팀" }),
+          el("span", { class: "badge caught", text: names }),
         ])
       );
-      foundPanel.appendChild(
-        el("div", { class: "hint", text: "잘못 눌렀다면 아래에서 발견한 팀을 다시 선택해 정정할 수 있어요." })
-      );
-    } else {
-      foundPanel.appendChild(el("div", { class: "hint", text: "나를 발견한 팀 번호를 선택하고 확인을 누르세요." }));
     }
+    foundPanel.appendChild(
+      el("div", { class: "hint", text: "나를 발견한 팀의 버튼을 눌러 켜고, 잘못 눌렀으면 다시 눌러서 꺼주세요." })
+    );
 
     const grid = el("div", { class: "number-grid", style: "margin:12px 0;" });
     for (const id of TEAM_IDS) {
+      const isOn = foundSet.has(id);
+      const isPending = pendingTeams.has(id);
       grid.appendChild(
         el("button", {
-          class: `num-btn with-name ${selectedFoundTeam === id ? "selected" : ""}`,
-          onclick: () => {
-            selectedFoundTeam = id;
-            renderFoundPanel();
-          },
+          class: `num-btn with-name ${isOn ? "on" : ""} ${isPending ? "pending" : ""}`,
+          disabled: isPending ? "true" : null,
+          onclick: () => handleToggle(id, isOn),
         }, [
           el("span", { class: "num-btn-num", text: String(id) }),
           el("span", { class: "num-btn-name", text: TEAM_NAMES[id] }),
@@ -199,23 +211,24 @@ export function renderOfficerView(container, { officerId, onExit }) {
       );
     }
     foundPanel.appendChild(grid);
+  }
 
-    foundPanel.appendChild(
-      el("button", {
-        class: "btn-danger",
-        text: "발견됨! 체크하기",
-        disabled: selectedFoundTeam ? null : "true",
-        onclick: async () => {
-          if (!selectedFoundTeam) return;
-          try {
-            await reportFound(officerId, selectedFoundTeam);
-            showToast(`${TEAM_NAMES[selectedFoundTeam]}(${selectedFoundTeam}팀)에게 발견된 것으로 기록했습니다.`);
-          } catch (err) {
-            showToast(`처리 실패: ${err.message}`, "error");
-          }
-        },
-      })
-    );
+  async function handleToggle(teamId, wasOn) {
+    pendingTeams.add(teamId);
+    renderFoundPanel();
+    try {
+      await toggleFound(officerId, teamId);
+      showToast(
+        wasOn
+          ? `${TEAM_NAMES[teamId]}(${teamId}팀) 발견 표시를 껐습니다.`
+          : `${TEAM_NAMES[teamId]}(${teamId}팀)에게 발견된 것으로 표시했습니다.`
+      );
+    } catch (err) {
+      showToast(`처리 실패: ${err.message}`, "error");
+    } finally {
+      pendingTeams.delete(teamId);
+      renderFoundPanel();
+    }
   }
 
   return () => {

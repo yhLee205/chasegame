@@ -1,5 +1,5 @@
 import { el, showToast } from "../ui.js";
-import { verifyOfficerPassword, TEAM_NAMES } from "../gameData.js";
+import { verifyOfficerPassword, TEAM_NAMES, OFFICER_NAMES } from "../gameData.js";
 import { selectRole } from "../main.js";
 
 const HOST_PASSWORD = import.meta.env.VITE_HOST_PASSWORD || "changeme";
@@ -27,7 +27,7 @@ export function renderRoleSelect(container) {
   function renderStep() {
     if (step === "role") return roleCards();
     if (step === "team-number") return numberPicker(9, "team", TEAM_NAMES);
-    if (step === "officer-number") return numberPicker(4, "officer-password");
+    if (step === "officer-number") return numberPicker(4, "officer-password", OFFICER_NAMES);
     if (step === "officer-password") return passwordForm("officer");
     if (step === "host-password") return passwordForm("host");
     return roleCards();
@@ -118,7 +118,7 @@ export function renderRoleSelect(container) {
   function passwordForm(kind) {
     const wrap = el("div", { class: "panel" });
     wrap.appendChild(
-      el("h2", { text: kind === "officer" ? `임원단 ${selectedNumber}번 입장` : "진행자 입장" })
+      el("h2", { text: kind === "officer" ? `임원단 ${selectedNumber}번 · ${OFFICER_NAMES[selectedNumber]} 입장` : "진행자 입장" })
     );
     const errorBox = el("div", { class: "error-msg" });
     const input = el("input", { type: "password", placeholder: "비밀번호", inputmode: "numeric" });
