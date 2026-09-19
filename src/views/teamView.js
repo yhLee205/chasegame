@@ -11,7 +11,6 @@ import {
   subscribeCatches,
   updateTeamLocation,
 } from "../gameData.js";
-import { distanceMeters, bearingDegrees, compassLabel, formatDistance } from "../geo.js";
 
 const WRITE_INTERVAL_MS = 10000;
 
@@ -174,37 +173,19 @@ export function renderTeamView(container, { teamId, onExit }) {
   function renderTargets() {
     targetList.innerHTML = "";
     for (const id of OFFICER_IDS) {
-      const o = officers[id] || {};
       const foundTeamIds = new Set(
         catches.filter((c) => Number(c.officerId) === id).map((c) => Number(c.teamId))
       );
       const foundCount = foundTeamIds.size;
       const item = el("div", { class: "target-item" });
-      if (o.photoUrl) {
-        item.appendChild(el("img", { class: "thumb", src: o.photoUrl, alt: "hint" }));
-      } else {
-        item.appendChild(el("div", { class: "thumb" }));
-      }
       const info = el("div", { class: "info" });
       info.appendChild(el("div", { class: "name", text: officerName(officers, id) }));
-
-      let metaText = "위치 정보 없음";
-      if (o.location) {
-        if (selfLocation) {
-          const dist = distanceMeters(selfLocation, o.location);
-          const bearing = bearingDegrees(selfLocation, o.location);
-          metaText = `${formatDistance(dist)} · ${compassLabel(bearing)}쪽`;
-        } else {
-          metaText = "내 위치를 확인하면 거리가 표시돼요";
-        }
-      }
-      info.appendChild(el("div", { class: "meta", text: metaText }));
       item.appendChild(info);
 
       item.appendChild(
         el("span", {
           class: `badge ${foundCount > 0 ? "caught" : "waiting"}`,
-          text: foundCount > 0 ? `발견됨 (${foundCount}팀)` : "수색중",
+          text: foundCount > 0 ? "발견됨" : "수색중",
         })
       );
       targetList.appendChild(item);
