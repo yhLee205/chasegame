@@ -9,7 +9,6 @@ import {
   query,
   where,
   orderBy,
-  limit,
   deleteDoc,
   serverTimestamp,
   writeBatch,
@@ -142,23 +141,31 @@ export async function setOfficerPhoto(officerId, photoUrl) {
   });
 }
 
+/** Finds the catch doc with the latest foundAt among a snapshot's docs (client-side, avoids needing a composite index). */
+function latestCatchDoc(snap) {
+  let latest = null;
+  snap.forEach((d) => {
+    const data = d.data();
+    if (!data.foundAt) return;
+    if (!latest || data.foundAt.toMillis() > latest.data.foundAt.toMillis()) {
+      latest = { ref: d.ref, data };
+    }
+  });
+  return latest;
+}
+
 /** Recomputes an officer's summary fields from the most recent remaining catch (or clears them if none). */
 async function refreshOfficerSummary(officerId) {
-  const q = query(
-    catchesCol,
-    where("officerId", "==", Number(officerId)),
-    orderBy("foundAt", "desc"),
-    limit(1)
-  );
+  const q = query(catchesCol, where("officerId", "==", Number(officerId)));
   const snap = await getDocs(q);
-  if (snap.empty) {
+  const latest = latestCatchDoc(snap);
+  if (!latest) {
     await updateDoc(officerDocRef(officerId), { found: false, foundByTeam: null, foundAt: null });
   } else {
-    const data = snap.docs[0].data();
     await updateDoc(officerDocRef(officerId), {
       found: true,
-      foundByTeam: data.teamId,
-      foundAt: data.foundAt,
+      foundByTeam: latest.data.teamId,
+      foundAt: latest.data.foundAt,
     });
   }
 }
@@ -181,15 +188,11 @@ export async function toggleFound(officerId, teamId) {
 
 /** Host-only: undo the most recently recorded catch for an officer (mistake correction). */
 export async function undoFound(officerId) {
-  const q = query(
-    catchesCol,
-    where("officerId", "==", Number(officerId)),
-    orderBy("foundAt", "desc"),
-    limit(1)
-  );
+  const q = query(catchesCol, where("officerId", "==", Number(officerId)));
   const snap = await getDocs(q);
-  if (snap.empty) return;
-  await deleteDoc(snap.docs[0].ref);
+  const latest = latestCatchDoc(snap);
+  if (!latest) return;
+  await deleteDoc(latest.ref);
   await refreshOfficerSummary(officerId);
 }
 
