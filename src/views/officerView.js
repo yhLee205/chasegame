@@ -1,7 +1,7 @@
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../firebase.js";
 import { el, showToast, formatClock, tsToDate } from "../ui.js";
-import { TEAM_IDS, OFFICER_NAMES, TEAM_NAMES, subscribeGameStatus, subscribeOfficers, subscribeCatches, updateOfficerLocation, setOfficerPhoto, toggleFound } from "../gameData.js";
+import { TEAM_IDS, OFFICER_NAMES, TEAM_NAMES, officerName, subscribeGameStatus, subscribeOfficers, subscribeCatches, updateOfficerLocation, setOfficerPhoto, toggleFound } from "../gameData.js";
 
 const AUTO_UPDATE_MS = 5 * 60 * 1000;
 
@@ -16,8 +16,9 @@ export function renderOfficerView(container, { officerId, onExit }) {
   const pendingTeams = new Set();
 
   const screen = el("div", { class: "screen" });
+  const titleEl = el("span", { text: `임원단 ${officerId}번 · ${OFFICER_NAMES[officerId]}` });
   const topbar = el("div", { class: "topbar" }, [
-    el("h1", {}, [el("span", { class: "dot" }), `임원단 ${officerId}번 · ${OFFICER_NAMES[officerId]}`]),
+    el("h1", {}, [el("span", { class: "dot" }), titleEl]),
     el("button", { class: "btn-ghost", text: "나가기", onclick: handleExit }),
   ]);
   const content = el("div", { class: "content" });
@@ -50,6 +51,7 @@ export function renderOfficerView(container, { officerId, onExit }) {
   }));
   unsubs.push(subscribeOfficers((data) => {
     officerData = data[officerId];
+    titleEl.textContent = `임원단 ${officerId}번 · ${officerName(data, officerId)}`;
     renderLocationPanel();
     renderPhotoPanel();
     renderFoundPanel();
@@ -205,8 +207,7 @@ export function renderOfficerView(container, { officerId, onExit }) {
           disabled: isPending ? "true" : null,
           onclick: () => handleToggle(id, isOn),
         }, [
-          el("span", { class: "num-btn-num", text: String(id) }),
-          el("span", { class: "num-btn-name", text: TEAM_NAMES[id] }),
+          el("span", { class: "num-btn-name", text: TEAM_NAMES[id], style: "font-size:14px; opacity:1;" }),
         ])
       );
     }
