@@ -87,6 +87,7 @@ export function renderTeamView(container, { teamId, onExit }) {
   unsubs.push(subscribeCatches((data) => {
     catches = data;
     renderBoard();
+    renderTargets();
   }));
 
   startGeolocation();
@@ -173,6 +174,10 @@ export function renderTeamView(container, { teamId, onExit }) {
     targetList.innerHTML = "";
     for (const id of OFFICER_IDS) {
       const o = officers[id] || {};
+      const foundTeamIds = new Set(
+        catches.filter((c) => Number(c.officerId) === id).map((c) => Number(c.teamId))
+      );
+      const foundCount = foundTeamIds.size;
       const item = el("div", { class: "target-item" });
       if (o.photoUrl) {
         item.appendChild(el("img", { class: "thumb", src: o.photoUrl, alt: "hint" }));
@@ -197,8 +202,8 @@ export function renderTeamView(container, { teamId, onExit }) {
 
       item.appendChild(
         el("span", {
-          class: `badge ${o.found ? "caught" : "waiting"}`,
-          text: o.found ? `발견됨 (${o.foundByTeam}팀)` : "수색중",
+          class: `badge ${foundCount > 0 ? "caught" : "waiting"}`,
+          text: foundCount > 0 ? `발견됨 (${foundCount}팀)` : "수색중",
         })
       );
       targetList.appendChild(item);
@@ -210,8 +215,11 @@ export function renderTeamView(container, { teamId, onExit }) {
     const startTime = tsToDate(gameStatus && gameStatus.startTime);
 
     const rows = TEAM_IDS.map((id) => {
-      const teamCatches = catches.filter((c) => c.teamId === id);
-      const count = teamCatches.length;
+      const teamCatches = catches.filter((c) => Number(c.teamId) === id);
+      // Dedupe by officerId: legacy catch records (from before the per-team on/off
+      // toggle) could contain more than one entry per officer, which made this count
+      // exceed the number of officers. A team can only ever have caught each officer once.
+      const count = new Set(teamCatches.map((c) => Number(c.officerId))).size;
       let lastCatchDate = null;
       for (const c of teamCatches) {
         const d = tsToDate(c.foundAt);
