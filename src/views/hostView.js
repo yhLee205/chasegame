@@ -213,7 +213,7 @@ export function renderHostView(container, { onExit }) {
       );
       const count = foundTeamIds.size;
       const row = el("div", { class: "status-row" });
-      row.appendChild(el("span", { text: `임원 ${id}번 · ${name}` }));
+      row.appendChild(el("span", { text: name }));
       const right = el("div", { style: "display:flex; align-items:center; gap:8px;" });
       right.appendChild(
         el("span", {
@@ -234,7 +234,7 @@ export function renderHostView(container, { onExit }) {
             class: "btn-ghost",
             text: "취소",
             onclick: async () => {
-              if (!confirm(`임원 ${id}번 ${name}의 가장 최근 발견 기록을 취소할까요?`)) return;
+              if (!confirm(`${name}의 가장 최근 발견 기록을 취소할까요?`)) return;
               try {
                 await undoFound(id);
                 showToast("발견 기록을 취소했습니다.");
@@ -253,7 +253,7 @@ export function renderHostView(container, { onExit }) {
   function openRenameModal(id, currentName) {
     const input = el("input", { type: "text", value: currentName, placeholder: "임원 이름" });
     const body = el("div", { class: "field" }, [
-      el("label", { text: `임원 ${id}번 이름` }),
+      el("label", { text: `${currentName}의 이름` }),
       input,
     ]);
     const close = showModal({
@@ -268,7 +268,7 @@ export function renderHostView(container, { onExit }) {
             if (!newName) return;
             try {
               await updateOfficerName(id, newName);
-              showToast(`임원 ${id}번 이름을 ${newName}(으)로 변경했습니다.`);
+              showToast(`${currentName}의 이름을 ${newName}(으)로 변경했습니다.`);
               close();
             } catch (err) {
               showToast(`이름 변경 실패: ${err.message}`, "error");
@@ -292,7 +292,7 @@ export function renderHostView(container, { onExit }) {
       const updated = tsToDate(t.updatedAt);
       teamPanel.appendChild(
         el("div", { class: "status-row" }, [
-          el("span", { text: `${TEAM_NAMES[id]} (${id}팀)` }),
+          el("span", { text: TEAM_NAMES[id] }),
           el("span", { class: "hint", text: updated ? `${formatClock(updated)} 갱신` : "위치 없음" }),
         ])
       );
@@ -309,7 +309,7 @@ export function renderHostView(container, { onExit }) {
     [...catches].reverse().forEach((c) => {
       logPanel.appendChild(
         el("div", { class: "status-row" }, [
-          el("span", { text: `${TEAM_NAMES[c.teamId]}(${c.teamId}팀) → 임원 ${c.officerId}번 ${officerName(officers, c.officerId)}` }),
+          el("span", { text: `${TEAM_NAMES[c.teamId]} → ${officerName(officers, c.officerId)}` }),
           el("span", { class: "hint", text: formatClock(tsToDate(c.foundAt)) }),
         ])
       );
