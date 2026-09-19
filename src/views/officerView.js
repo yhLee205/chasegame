@@ -1,7 +1,5 @@
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "../firebase.js";
 import { el, showToast, formatClock, tsToDate } from "../ui.js";
-import { TEAM_IDS, OFFICER_NAMES, TEAM_NAMES, officerName, subscribeGameStatus, subscribeOfficers, subscribeCatches, updateOfficerLocation, setOfficerPhoto, toggleFound } from "../gameData.js";
+import { TEAM_IDS, OFFICER_NAMES, TEAM_NAMES, officerName, subscribeGameStatus, subscribeOfficers, subscribeCatches, updateOfficerLocation, toggleFound } from "../gameData.js";
 
 const AUTO_UPDATE_MS = 5 * 60 * 1000;
 
@@ -32,17 +30,14 @@ export function renderOfficerView(container, { officerId, onExit }) {
 
   const gameStatusPanel = el("div", { class: "panel" });
   const locationPanel = el("div", { class: "panel" });
-  const photoPanel = el("div", { class: "panel" });
   const foundPanel = el("div", { class: "panel" });
 
   content.appendChild(gameStatusPanel);
   content.appendChild(locationPanel);
-  content.appendChild(photoPanel);
   content.appendChild(foundPanel);
 
   renderGameStatus();
   renderLocationPanel();
-  renderPhotoPanel();
   renderFoundPanel();
 
   unsubs.push(subscribeGameStatus((data) => {
@@ -53,7 +48,6 @@ export function renderOfficerView(container, { officerId, onExit }) {
     officerData = data[officerId];
     titleEl.textContent = `임원단 ${officerId}번 · ${officerName(data, officerId)}`;
     renderLocationPanel();
-    renderPhotoPanel();
     renderFoundPanel();
   }));
   unsubs.push(subscribeCatches((data) => {
@@ -128,48 +122,6 @@ export function renderOfficerView(container, { officerId, onExit }) {
     locationPanel.appendChild(
       el("button", { class: "btn-primary", text: "지금 위치 전송", onclick: sendLocationUpdate, style: "margin-top:8px;" })
     );
-  }
-
-  function renderPhotoPanel() {
-    photoPanel.innerHTML = "";
-    photoPanel.appendChild(el("h2", { text: "힌트 사진 (선택)" }));
-    if (officerData && officerData.photoUrl) {
-      photoPanel.appendChild(
-        el("img", { src: officerData.photoUrl, style: "width:100%;border-radius:10px;margin-bottom:10px;" })
-      );
-    }
-    const fileId = `photo-input-${officerId}`;
-    const input = el("input", {
-      type: "file",
-      accept: "image/*",
-      capture: "environment",
-      id: fileId,
-      onchange: handlePhotoUpload,
-    });
-    photoPanel.appendChild(
-      el("div", { class: "photo-input-row" }, [
-        el("label", { for: fileId, text: "사진 촬영/선택" }, []),
-        input,
-      ])
-    );
-  }
-
-  async function handlePhotoUpload(e) {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    showToast("사진 업로드 중...");
-    try {
-      const path = `officers/${officerId}/${Date.now()}-${file.name}`;
-      const storageRef = ref(storage, path);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      await setOfficerPhoto(officerId, url);
-      showToast("사진이 업로드되었습니다.");
-    } catch (err) {
-      showToast(`사진 업로드 실패: ${err.message}`, "error");
-    } finally {
-      e.target.value = "";
-    }
   }
 
   function renderFoundPanel() {
