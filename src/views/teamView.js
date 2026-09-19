@@ -173,10 +173,9 @@ export function renderTeamView(container, { teamId, onExit }) {
   function renderTargets() {
     targetList.innerHTML = "";
     for (const id of OFFICER_IDS) {
-      const foundTeamIds = new Set(
-        catches.filter((c) => Number(c.officerId) === id).map((c) => Number(c.teamId))
+      const foundByMe = catches.some(
+        (c) => Number(c.officerId) === id && Number(c.teamId) === Number(teamId)
       );
-      const foundCount = foundTeamIds.size;
       const item = el("div", { class: "target-item" });
       const info = el("div", { class: "info" });
       info.appendChild(el("div", { class: "name", text: officerName(officers, id) }));
@@ -184,8 +183,8 @@ export function renderTeamView(container, { teamId, onExit }) {
 
       item.appendChild(
         el("span", {
-          class: `badge ${foundCount > 0 ? "caught" : "waiting"}`,
-          text: foundCount > 0 ? "발견됨" : "수색중",
+          class: `badge ${foundByMe ? "caught" : "waiting"}`,
+          text: foundByMe ? "발견됨" : "수색중",
         })
       );
       targetList.appendChild(item);
