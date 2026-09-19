@@ -120,7 +120,7 @@ export function renderHostView(container, { onExit }) {
         text: "🚀 새 게임 시작 (전체 초기화)",
         style: "margin-top:10px;",
         onclick: async () => {
-          if (!confirm("정말 새 게임을 시작할까요? 모든 위치/사진/발견 ˋ 바시연 초기화됩니다.")) return;
+          if (!confirm("정말 새 게임을 시작할까요? 모든 위치/사진/발견 기록이 초기화됩니다.")) return;
           try {
             await startNewGame();
             showToast("새 게임을 시작했습니다.");
