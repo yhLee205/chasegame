@@ -85,6 +85,7 @@ export function renderHostView(container, { onExit }) {
   unsubs.push(subscribeCatches((data) => {
     catches = data;
     renderLogPanel();
+    renderOfficerPanel();
   }));
 
   renderControl();
@@ -119,7 +120,7 @@ export function renderHostView(container, { onExit }) {
         text: "🚀 새 게임 시작 (전체 초기화)",
         style: "margin-top:10px;",
         onclick: async () => {
-          if (!confirm("정말 새 게임을 시작할까요? 모든 위치/사진/발견 기록이 초기화됩니다.")) return;
+          if (!confirm("정말 새 게임을 시작할까요? 모든 위치/사진/발견 ˋ 바시연 초기화됩니다.")) return;
           try {
             await startNewGame();
             showToast("새 게임을 시작했습니다.");
@@ -205,23 +206,26 @@ export function renderHostView(container, { onExit }) {
     officerPanel.innerHTML = "";
     officerPanel.appendChild(el("h2", { text: "임원단 현황" }));
     for (const id of OFFICER_IDS) {
-      const o = officers[id] || {};
+      const foundTeamIds = new Set(
+        catches.filter((c) => Number(c.officerId) === id).map((c) => Number(c.teamId))
+      );
+      const count = foundTeamIds.size;
       const row = el("div", { class: "status-row" });
       row.appendChild(el("span", { text: `임원 ${id}번 · ${OFFICER_NAMES[id]}` }));
       const right = el("div", { style: "display:flex; align-items:center; gap:8px;" });
       right.appendChild(
         el("span", {
-          class: `badge ${o.found ? "caught" : "waiting"}`,
-          text: o.found ? `${TEAM_NAMES[o.foundByTeam]}(${o.foundByTeam}팀)에게 발견 (${formatClock(tsToDate(o.foundAt))})` : "미발견",
+          class: `badge ${count > 0 ? "caught" : "waiting"}`,
+          text: count > 0 ? `${count}팀에게 발견됨` : "미발견",
         })
       );
-      if (o.found) {
+      if (count > 0) {
         right.appendChild(
           el("button", {
             class: "btn-ghost",
             text: "취소",
             onclick: async () => {
-              if (!confirm(`임원 ${id}번 ${OFFICER_NAMES[id]}의 발견 기록을 취소할까요?`)) return;
+              if (!confirm(`임원 ${id}번 ${OFFICER_NAMES[id]}의 가장 최근 발견 기록을 취소할까요?`)) return;
               try {
                 await undoFound(id);
                 showToast("발견 기록을 취소했습니다.");
