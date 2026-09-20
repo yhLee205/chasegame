@@ -20,7 +20,7 @@ export const TEAM_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 export const OFFICER_NAMES = {
   1: "이영호",
-  2: "김동민",
+  2: "정하준",
   3: "남규빈",
   4: "최가은",
 };
